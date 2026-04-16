@@ -1,0 +1,11 @@
+{
+  "src": [
+    "pages/Index",
+    "pages/SelectPage",
+    "pages/BattlePage",
+    "pages/OnlineLobbyPage",
+    "pages/RoomPage",
+    "pages/OnlineSelectPage",
+    "pages/OnlineBattlePage"
+  ]
+}
