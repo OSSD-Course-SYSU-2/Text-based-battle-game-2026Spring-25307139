@@ -1,4 +1,5 @@
 import { router } from '@kit.ArkUI';
+import { BreakpointUtils } from '../common/BreakpointUtils';
 
 interface Bullet {
   id: number
@@ -15,7 +16,6 @@ interface Bullet {
 struct BattlePage {
   private readonly GRID_COLS: number = 12
   private readonly GRID_ROWS: number = 8
-  private readonly CELL_SIZE: number = 40
   private readonly MAX_HP: number = 300
   private readonly ATTACK_DMG: number = 10
   private readonly FILL_PER_HIT: number = 0.2 // 每次命中+20%蓝色填充
@@ -71,7 +71,12 @@ struct BattlePage {
   // 网格显示
   @State gridDisplay: string[] = []
 
+  @State isWide: boolean = false
+
   aboutToAppear() {
+    BreakpointUtils.registerBreakpointCallback(this.getUIContext().getHostContext() as Context)
+    this.isWide = BreakpointUtils.isWideScreen()
+
     const params = router.getParams() as Record<string, string>
     if (params) {
       this.player1Char = params['player1Char'] as string || '剑'
@@ -613,22 +618,22 @@ struct BattlePage {
   }
 
   build() {
+    Stack() {
     Column() {
-      // 顶部信息
       Row() {
         Column() {
           Text(this.player1Char + '(你)')
-            .fontSize(16)
+            .fontSize(BreakpointUtils.getTopInfoFontSize())
             .fontColor('#00CCFF')
             .fontWeight(FontWeight.Bold)
           if (this.p1Shield > 0) {
             Text('护盾x' + this.p1Shield)
-              .fontSize(12)
+              .fontSize(BreakpointUtils.getTopInfoFontSize() - 4)
               .fontColor('#FFCC00')
           }
           if (this.p1Invisible) {
             Text('隐身中')
-              .fontSize(12)
+              .fontSize(BreakpointUtils.getTopInfoFontSize() - 4)
               .fontColor('#9900CC')
           }
         }
@@ -637,17 +642,17 @@ struct BattlePage {
 
         Column() {
           Text(this.player2Char + '(AI)')
-            .fontSize(16)
+            .fontSize(BreakpointUtils.getTopInfoFontSize())
             .fontColor('#FF8800')
             .fontWeight(FontWeight.Bold)
           if (this.p2Shield > 0) {
             Text('护盾x' + this.p2Shield)
-              .fontSize(12)
+              .fontSize(BreakpointUtils.getTopInfoFontSize() - 4)
               .fontColor('#FFCC00')
           }
           if (this.p2Invisible) {
             Text('隐身中')
-              .fontSize(12)
+              .fontSize(BreakpointUtils.getTopInfoFontSize() - 4)
               .fontColor('#9900CC')
           }
         }
@@ -655,264 +660,337 @@ struct BattlePage {
       .width('90%')
       .margin({ top: 10, bottom: 5 })
 
-      // 网格对战区域
-      Column() {
-        ForEach([0, 1, 2, 3, 4, 5, 6, 7], (row: number) => {
-          Row() {
-            ForEach([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], (col: number) => {
-              Stack() {
-                // 格子背景
-                Column()
-                  .width(this.CELL_SIZE)
-                  .height(this.CELL_SIZE)
-                  .backgroundColor('#2A2A3E')
-                  .border({ width: 0.5, color: '#444466' })
-
-                // 玩家1角色格子
-                if (this.isP1Cell(row, col)) {
-                  // 蓝色填充背景（从下往上）
-                  Stack() {
-                    // 技能色/蓝色填充背景
-                    Column()
-                      .width(this.CELL_SIZE)
-                      .height(this.CELL_SIZE)
-                      .backgroundColor(this.getP1CellBg())
-
-                    // 蓝色填充时，从下往上填充效果
-                    if (this.p1CellColor === 'blue') {
-                      Column() {
-                        // 上方未填充部分（透明覆盖）
-                        Column()
-                          .width(this.CELL_SIZE)
-                          .height(this.CELL_SIZE * (1 - this.p1Fill))
-                          .backgroundColor('#2A2A3E')
-                        // 下方填充部分由背景色显示
-                      }
-                      .width(this.CELL_SIZE)
-                      .height(this.CELL_SIZE)
-                      .alignItems(HorizontalAlign.Center)
-                    }
-
-                    // 角色内容
-                    Column() {
-                      // 进度条
-                      Stack() {
-                        Row()
-                          .width(this.CELL_SIZE - 4)
-                          .height(3)
-                          .backgroundColor('#555555')
-                          .borderRadius(1)
-                        Row()
-                          .width((this.CELL_SIZE - 4) * (this.p1Hp / this.MAX_HP))
-                          .height(3)
-                          .backgroundColor('#00CCFF')
-                          .borderRadius(1)
-                      }
-                      .width(this.CELL_SIZE - 4)
-                      .height(3)
-                      .alignContent(Alignment.Start)
-
-                      Text(this.player1Char)
-                        .fontSize(20)
-                        .fontWeight(FontWeight.Bold)
-                        .fontColor('#FFFFFF')
-                    }
-                    .justifyContent(FlexAlign.Center)
-                    .alignItems(HorizontalAlign.Center)
-                  }
-                  .width(this.CELL_SIZE)
-                  .height(this.CELL_SIZE)
-                } else if (this.isP2Cell(row, col)) {
-                  // AI角色格子
-                  Stack() {
-                    Column()
-                      .width(this.CELL_SIZE)
-                      .height(this.CELL_SIZE)
-                      .backgroundColor(this.getP2CellBg())
-
-                    if (this.p2CellColor === 'blue') {
-                      Column() {
-                        Column()
-                          .width(this.CELL_SIZE)
-                          .height(this.CELL_SIZE * (1 - this.p2Fill))
-                          .backgroundColor('#2A2A3E')
-                      }
-                      .width(this.CELL_SIZE)
-                      .height(this.CELL_SIZE)
-                      .alignItems(HorizontalAlign.Center)
-                    }
-
-                    Column() {
-                      Stack() {
-                        Row()
-                          .width(this.CELL_SIZE - 4)
-                          .height(3)
-                          .backgroundColor('#555555')
-                          .borderRadius(1)
-                        Row()
-                          .width((this.CELL_SIZE - 4) * (this.p2Hp / this.MAX_HP))
-                          .height(3)
-                          .backgroundColor('#FF8800')
-                          .borderRadius(1)
-                      }
-                      .width(this.CELL_SIZE - 4)
-                      .height(3)
-                      .alignContent(Alignment.Start)
-
-                      Text(this.player2Char)
-                        .fontSize(20)
-                        .fontWeight(FontWeight.Bold)
-                        .fontColor('#FFFFFF')
-                    }
-                    .justifyContent(FlexAlign.Center)
-                    .alignItems(HorizontalAlign.Center)
-                  }
-                  .width(this.CELL_SIZE)
-                  .height(this.CELL_SIZE)
-                } else if (this.isSkillBulletCell(row * this.GRID_COLS + col)) {
-                  Text('@')
-                    .fontSize(18)
-                    .fontWeight(FontWeight.Bold)
-                    .fontColor('#FF6600')
-                } else if (this.isBulletCell(row * this.GRID_COLS + col)) {
-                  Text('！')
-                    .fontSize(20)
-                    .fontWeight(FontWeight.Bold)
-                    .fontColor('#FFFF00')
-                }
-              }
-              .width(this.CELL_SIZE)
-              .height(this.CELL_SIZE)
-            }, (col: number) => `${row}-${col}`)
-          }
-        }, (row: number) => row.toString())
-      }
-      .margin({ top: 5 })
-
-      // 倒计时显示
-      if (!this.gameStarted && !this.gameOver) {
-        Text(this.countdown.toString())
-          .fontSize(80)
-          .fontWeight(FontWeight.Bold)
-          .fontColor('#FFCC00')
-          .margin({ top: 20 })
-      }
-
-      // 操控按钮区域
-      if (this.gameStarted && !this.gameOver) {
-        Column() {
-          Row() {
+      if (this.isWide && this.gameStarted && !this.gameOver) {
+        Row() {
+          Column() {
             Button('▲')
-              .width(52)
-              .height(52)
-              .fontSize(20)
+              .width(BreakpointUtils.getSideControlBtnSize())
+              .height(BreakpointUtils.getSideControlBtnSize())
+              .fontSize(BreakpointUtils.getSideControlBtnFontSize())
               .backgroundColor('#3A3A5E')
               .fontColor('#FFFFFF')
               .borderRadius(8)
               .onClick(() => this.moveP1(0, -1))
-          }
-          .justifyContent(FlexAlign.Center)
-          .width('100%')
-          .margin({ bottom: 4 })
 
-          Row() {
-            Button('◀')
-              .width(52)
-              .height(52)
-              .fontSize(20)
-              .backgroundColor('#3A3A5E')
-              .fontColor('#FFFFFF')
-              .borderRadius(8)
-              .onClick(() => this.moveP1(-1, 0))
+            Row() {
+              Button('◀')
+                .width(BreakpointUtils.getSideControlBtnSize())
+                .height(BreakpointUtils.getSideControlBtnSize())
+                .fontSize(BreakpointUtils.getSideControlBtnFontSize())
+                .backgroundColor('#3A3A5E')
+                .fontColor('#FFFFFF')
+                .borderRadius(8)
+                .onClick(() => this.moveP1(-1, 0))
 
-            Blank().width(8)
+              Blank().width(6)
 
-            Button('攻击')
-              .width(68)
-              .height(52)
-              .fontSize(18)
-              .fontWeight(FontWeight.Bold)
-              .backgroundColor('#CC3300')
-              .fontColor('#FFFFFF')
-              .borderRadius(8)
-              .onClick(() => this.attackP1())
+              Button('▶')
+                .width(BreakpointUtils.getSideControlBtnSize())
+                .height(BreakpointUtils.getSideControlBtnSize())
+                .fontSize(BreakpointUtils.getSideControlBtnFontSize())
+                .backgroundColor('#3A3A5E')
+                .fontColor('#FFFFFF')
+                .borderRadius(8)
+                .onClick(() => this.moveP1(1, 0))
+            }
 
-            Blank().width(8)
-
-            Button(this.getSkillLabel())
-              .width(68)
-              .height(52)
-              .fontSize(14)
-              .fontWeight(FontWeight.Bold)
-              .backgroundColor(this.canUseSkill() ? this.getSkillBtnColor() : '#555555')
-              .fontColor(this.canUseSkill() ? '#FFFFFF' : '#888888')
-              .borderRadius(8)
-              .enabled(this.canUseSkill())
-              .onClick(() => this.useSkillP1())
-
-            Blank().width(8)
-
-            Button('▶')
-              .width(52)
-              .height(52)
-              .fontSize(20)
-              .backgroundColor('#3A3A5E')
-              .fontColor('#FFFFFF')
-              .borderRadius(8)
-              .onClick(() => this.moveP1(1, 0))
-          }
-          .justifyContent(FlexAlign.Center)
-          .width('100%')
-          .margin({ bottom: 4 })
-
-          Row() {
             Button('▼')
-              .width(52)
-              .height(52)
-              .fontSize(20)
+              .width(BreakpointUtils.getSideControlBtnSize())
+              .height(BreakpointUtils.getSideControlBtnSize())
+              .fontSize(BreakpointUtils.getSideControlBtnFontSize())
               .backgroundColor('#3A3A5E')
               .fontColor('#FFFFFF')
               .borderRadius(8)
               .onClick(() => this.moveP1(0, 1))
           }
           .justifyContent(FlexAlign.Center)
-          .width('100%')
+          .alignItems(HorizontalAlign.Center)
+
+          this.GameGrid()
+
+          Column() {
+            Button('攻击')
+              .width(BreakpointUtils.getSideActionBtnWidth())
+              .height(BreakpointUtils.getSideControlBtnSize())
+              .fontSize(BreakpointUtils.getSideControlBtnFontSize() - 2)
+              .fontWeight(FontWeight.Bold)
+              .backgroundColor('#CC3300')
+              .fontColor('#FFFFFF')
+              .borderRadius(8)
+              .onClick(() => this.attackP1())
+
+            Blank().height(8)
+
+            Button(this.getSkillLabel())
+              .width(BreakpointUtils.getSideActionBtnWidth())
+              .height(BreakpointUtils.getSideControlBtnSize())
+              .fontSize(BreakpointUtils.getSideControlBtnFontSize() - 6)
+              .fontWeight(FontWeight.Bold)
+              .backgroundColor(this.canUseSkill() ? this.getSkillBtnColor() : '#555555')
+              .fontColor(this.canUseSkill() ? '#FFFFFF' : '#888888')
+              .borderRadius(8)
+              .enabled(this.canUseSkill())
+              .onClick(() => this.useSkillP1())
+          }
+          .justifyContent(FlexAlign.Center)
+          .alignItems(HorizontalAlign.Center)
         }
-        .margin({ top: 10 })
-      }
+        .width('100%')
+        .justifyContent(FlexAlign.Center)
+        .alignItems(VerticalAlign.Center)
+      } else {
+        this.GameGrid()
 
-      // 游戏结束显示
-      if (this.gameOver) {
-        Column() {
-          Text('GAME OVER！')
-            .fontSize(40)
-            .fontWeight(FontWeight.Bold)
-            .fontColor('#FF0000')
-            .margin({ bottom: 16 })
+        if (this.gameStarted && !this.gameOver) {
+          Column() {
+            Row() {
+              Button('▲')
+                .width(BreakpointUtils.getControlBtnSize())
+                .height(BreakpointUtils.getControlBtnSize())
+                .fontSize(BreakpointUtils.getControlBtnFontSize())
+                .backgroundColor('#3A3A5E')
+                .fontColor('#FFFFFF')
+                .borderRadius(8)
+                .onClick(() => this.moveP1(0, -1))
+            }
+            .justifyContent(FlexAlign.Center)
+            .width('100%')
+            .margin({ bottom: 4 })
 
-          Text(this.winnerText)
-            .fontSize(24)
-            .fontColor('#FFCC00')
-            .margin({ bottom: 30 })
+            Row() {
+              Button('◀')
+                .width(BreakpointUtils.getControlBtnSize())
+                .height(BreakpointUtils.getControlBtnSize())
+                .fontSize(BreakpointUtils.getControlBtnFontSize())
+                .backgroundColor('#3A3A5E')
+                .fontColor('#FFFFFF')
+                .borderRadius(8)
+                .onClick(() => this.moveP1(-1, 0))
 
-          Button('重新开始')
-            .width(140)
-            .height(50)
-            .fontSize(20)
-            .backgroundColor('#FF6600')
-            .fontColor('#FFFFFF')
-            .borderRadius(10)
-            .onClick(() => {
-              router.pushUrl({ url: 'pages/SelectPage' })
-            })
+              Blank().width(8)
+
+              Button('攻击')
+                .width(BreakpointUtils.getActionBtnWidth())
+                .height(BreakpointUtils.getControlBtnSize())
+                .fontSize(BreakpointUtils.getControlBtnFontSize() - 2)
+                .fontWeight(FontWeight.Bold)
+                .backgroundColor('#CC3300')
+                .fontColor('#FFFFFF')
+                .borderRadius(8)
+                .onClick(() => this.attackP1())
+
+              Blank().width(8)
+
+              Button(this.getSkillLabel())
+                .width(BreakpointUtils.getActionBtnWidth())
+                .height(BreakpointUtils.getControlBtnSize())
+                .fontSize(BreakpointUtils.getControlBtnFontSize() - 6)
+                .fontWeight(FontWeight.Bold)
+                .backgroundColor(this.canUseSkill() ? this.getSkillBtnColor() : '#555555')
+                .fontColor(this.canUseSkill() ? '#FFFFFF' : '#888888')
+                .borderRadius(8)
+                .enabled(this.canUseSkill())
+                .onClick(() => this.useSkillP1())
+
+              Blank().width(8)
+
+              Button('▶')
+                .width(BreakpointUtils.getControlBtnSize())
+                .height(BreakpointUtils.getControlBtnSize())
+                .fontSize(BreakpointUtils.getControlBtnFontSize())
+                .backgroundColor('#3A3A5E')
+                .fontColor('#FFFFFF')
+                .borderRadius(8)
+                .onClick(() => this.moveP1(1, 0))
+            }
+            .justifyContent(FlexAlign.Center)
+            .width('100%')
+            .margin({ bottom: 4 })
+
+            Row() {
+              Button('▼')
+                .width(BreakpointUtils.getControlBtnSize())
+                .height(BreakpointUtils.getControlBtnSize())
+                .fontSize(BreakpointUtils.getControlBtnFontSize())
+                .backgroundColor('#3A3A5E')
+                .fontColor('#FFFFFF')
+                .borderRadius(8)
+                .onClick(() => this.moveP1(0, 1))
+            }
+            .justifyContent(FlexAlign.Center)
+            .width('100%')
+          }
+          .margin({ top: 10 })
         }
-        .margin({ top: 30 })
       }
     }
+    .padding({ bottom: 40 })
     .width('100%')
     .height('100%')
     .backgroundColor('#1A1A2E')
     .justifyContent(FlexAlign.Start)
     .alignItems(HorizontalAlign.Center)
+
+    if (!this.gameStarted && !this.gameOver) {
+      Text(this.countdown.toString())
+        .fontSize(BreakpointUtils.getGameCountdownFontSize())
+        .fontWeight(FontWeight.Bold)
+        .fontColor('#FFCC00')
+    }
+
+    if (this.gameOver) {
+      Column() {
+        Text('GAME OVER！')
+          .fontSize(BreakpointUtils.getGameOverFontSize())
+          .fontWeight(FontWeight.Bold)
+          .fontColor('#FF0000')
+          .margin({ bottom: 16 })
+
+        Text(this.winnerText)
+          .fontSize(BreakpointUtils.getSubTitleFontSize() + 4)
+          .fontColor('#FFCC00')
+          .margin({ bottom: 30 })
+
+        Button('重新开始')
+          .width(BreakpointUtils.getButtonWidth() - 20)
+          .height(BreakpointUtils.getButtonHeight() - 10)
+          .fontSize(BreakpointUtils.getSubTitleFontSize())
+          .backgroundColor('#FF6600')
+          .fontColor('#FFFFFF')
+          .borderRadius(10)
+          .onClick(() => {
+            router.pushUrl({ url: 'pages/SelectPage' })
+          })
+      }
+    }
+    }
+    .width('100%')
+    .height('100%')
+  }
+
+  @Builder
+  GameGrid() {
+    Column() {
+      ForEach([0, 1, 2, 3, 4, 5, 6, 7], (row: number) => {
+        Row() {
+          ForEach([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], (col: number) => {
+            Stack() {
+              Column()
+                .width(BreakpointUtils.getCellSize())
+                .height(BreakpointUtils.getCellSize())
+                .backgroundColor('#2A2A3E')
+                .border({ width: 0.5, color: '#444466' })
+
+              if (this.isP1Cell(row, col)) {
+                Stack() {
+                  Column()
+                    .width(BreakpointUtils.getCellSize())
+                    .height(BreakpointUtils.getCellSize())
+                    .backgroundColor(this.getP1CellBg())
+
+                  if (this.p1CellColor === 'blue') {
+                    Column() {
+                      Column()
+                        .width(BreakpointUtils.getCellSize())
+                        .height(BreakpointUtils.getCellSize() * (1 - this.p1Fill))
+                        .backgroundColor('#2A2A3E')
+                    }
+                    .width(BreakpointUtils.getCellSize())
+                    .height(BreakpointUtils.getCellSize())
+                    .alignItems(HorizontalAlign.Center)
+                  }
+
+                  Column() {
+                    Stack() {
+                      Row()
+                        .width(BreakpointUtils.getCellSize() - 4)
+                        .height(BreakpointUtils.getHpBarHeight())
+                        .backgroundColor('#555555')
+                        .borderRadius(1)
+                      Row()
+                        .width((BreakpointUtils.getCellSize() - 4) * (this.p1Hp / this.MAX_HP))
+                        .height(BreakpointUtils.getHpBarHeight())
+                        .backgroundColor('#00CCFF')
+                        .borderRadius(1)
+                    }
+                    .width(BreakpointUtils.getCellSize() - 4)
+                    .height(BreakpointUtils.getHpBarHeight())
+                    .alignContent(Alignment.Start)
+
+                    Text(this.player1Char)
+                      .fontSize(BreakpointUtils.getGridCharFontSize())
+                      .fontWeight(FontWeight.Bold)
+                      .fontColor('#FFFFFF')
+                  }
+                  .justifyContent(FlexAlign.Center)
+                  .alignItems(HorizontalAlign.Center)
+                }
+                .width(BreakpointUtils.getCellSize())
+                .height(BreakpointUtils.getCellSize())
+              } else if (this.isP2Cell(row, col)) {
+                Stack() {
+                  Column()
+                    .width(BreakpointUtils.getCellSize())
+                    .height(BreakpointUtils.getCellSize())
+                    .backgroundColor(this.getP2CellBg())
+
+                  if (this.p2CellColor === 'blue') {
+                    Column() {
+                      Column()
+                        .width(BreakpointUtils.getCellSize())
+                        .height(BreakpointUtils.getCellSize() * (1 - this.p2Fill))
+                        .backgroundColor('#2A2A3E')
+                    }
+                    .width(BreakpointUtils.getCellSize())
+                    .height(BreakpointUtils.getCellSize())
+                    .alignItems(HorizontalAlign.Center)
+                  }
+
+                  Column() {
+                    Stack() {
+                      Row()
+                        .width(BreakpointUtils.getCellSize() - 4)
+                        .height(BreakpointUtils.getHpBarHeight())
+                        .backgroundColor('#555555')
+                        .borderRadius(1)
+                      Row()
+                        .width((BreakpointUtils.getCellSize() - 4) * (this.p2Hp / this.MAX_HP))
+                        .height(BreakpointUtils.getHpBarHeight())
+                        .backgroundColor('#FF8800')
+                        .borderRadius(1)
+                    }
+                    .width(BreakpointUtils.getCellSize() - 4)
+                    .height(BreakpointUtils.getHpBarHeight())
+                    .alignContent(Alignment.Start)
+
+                    Text(this.player2Char)
+                      .fontSize(BreakpointUtils.getGridCharFontSize())
+                      .fontWeight(FontWeight.Bold)
+                      .fontColor('#FFFFFF')
+                  }
+                  .justifyContent(FlexAlign.Center)
+                  .alignItems(HorizontalAlign.Center)
+                }
+                .width(BreakpointUtils.getCellSize())
+                .height(BreakpointUtils.getCellSize())
+              } else if (this.isSkillBulletCell(row * this.GRID_COLS + col)) {
+                Text('@')
+                  .fontSize(BreakpointUtils.getGridBulletFontSize())
+                  .fontWeight(FontWeight.Bold)
+                  .fontColor('#FF6600')
+              } else if (this.isBulletCell(row * this.GRID_COLS + col)) {
+                Text('！')
+                  .fontSize(BreakpointUtils.getGridCharFontSize())
+                  .fontWeight(FontWeight.Bold)
+                  .fontColor('#FFFF00')
+              }
+            }
+            .width(BreakpointUtils.getCellSize())
+            .height(BreakpointUtils.getCellSize())
+          }, (col: number) => `${row}-${col}`)
+        }
+      }, (row: number) => row.toString())
+    }
+    .margin({ top: 5 })
   }
 }

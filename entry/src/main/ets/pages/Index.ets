@@ -1,25 +1,30 @@
 import { router } from '@kit.ArkUI';
+import { BreakpointUtils } from '../common/BreakpointUtils';
 
 @Entry
 @Component
 struct Index {
+  aboutToAppear() {
+    BreakpointUtils.registerBreakpointCallback(this.getUIContext().getHostContext() as Context)
+  }
+
   build() {
     Column() {
       Text('网格对战')
-        .fontSize(36)
+        .fontSize(BreakpointUtils.getTitleFontSize())
         .fontWeight(FontWeight.Bold)
         .fontColor('#FFFFFF')
         .margin({ bottom: 20 })
 
       Text('玩家 vs AI')
-        .fontSize(20)
+        .fontSize(BreakpointUtils.getSubTitleFontSize())
         .fontColor('#AAAAAA')
         .margin({ bottom: 50 })
 
       Button('开始游戏')
-        .width(160)
-        .height(60)
-        .fontSize(24)
+        .width(BreakpointUtils.getButtonWidth())
+        .height(BreakpointUtils.getButtonHeight())
+        .fontSize(BreakpointUtils.getButtonFontSize())
         .fontWeight(FontWeight.Bold)
         .backgroundColor('#FF6600')
         .fontColor('#FFFFFF')
@@ -31,9 +36,9 @@ struct Index {
       Blank().height(20)
 
       Button('局域网联机')
-        .width(160)
-        .height(60)
-        .fontSize(22)
+        .width(BreakpointUtils.getButtonWidth())
+        .height(BreakpointUtils.getButtonHeight())
+        .fontSize(BreakpointUtils.getButtonFontSize() - 2)
         .fontWeight(FontWeight.Bold)
         .backgroundColor('#0066CC')
         .fontColor('#FFFFFF')
@@ -42,6 +47,7 @@ struct Index {
           router.pushUrl({ url: 'pages/OnlineLobbyPage' })
         })
     }
+    .padding({ bottom: 40 })
     .width('100%')
     .height('100%')
     .backgroundColor('#1A1A2E')

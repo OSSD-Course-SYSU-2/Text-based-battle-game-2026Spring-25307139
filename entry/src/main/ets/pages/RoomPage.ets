@@ -1,7 +1,7 @@
 import { router } from '@kit.ArkUI';
 import { NetManager, ConnState, MsgType, NetMessage } from '../network/NetManager';
+import { BreakpointUtils } from '../common/BreakpointUtils';
 
-// 房间参数
 interface RoomParams {
   isHost: string
   roomCode: string
@@ -10,7 +10,7 @@ interface RoomParams {
 @Entry
 @Component
 struct RoomPage {
-  @State mode: string = '' // 'create' 或 'join'
+  @State mode: string = ''
   @State roomCode: string = ''
   @State inputRoomCode: string = ''
   @State inputHostIp: string = ''
@@ -23,22 +23,21 @@ struct RoomPage {
   private netManager: NetManager = NetManager.getInstance()
 
   aboutToAppear() {
+    BreakpointUtils.registerBreakpointCallback(this.getUIContext().getHostContext() as Context)
+
     const params = router.getParams() as Record<string, string>
     if (params) {
       this.mode = params['mode'] as string || 'create'
     }
 
-    // 获取本机IP
     this.netManager.getLocalIp().then((ip: string) => {
       this.localIp = ip
     })
 
-    // 设置回调
     this.netManager.onStateChange((state: ConnState) => {
       this.connState = state
       this.updateStatusText()
 
-      // 连接成功后跳转到角色选择页
       if (state === ConnState.HOST_CONNECTED || state === ConnState.CONNECTED) {
         this.netManager.startHeartbeat()
         setTimeout(() => {
@@ -60,7 +59,6 @@ struct RoomPage {
     })
 
     this.netManager.onMessage((msg: NetMessage) => {
-      // 房间页面只处理房间相关消息
       if (msg.type === MsgType.ROOM_REJECT) {
         this.errorMsg = '加入被拒绝：房间已满'
         this.isConnecting = false
@@ -68,14 +66,12 @@ struct RoomPage {
       }
     })
 
-    // 自动创建房间
     if (this.mode === 'create') {
       this.createRoom()
     }
   }
 
   aboutToDisappear() {
-    // 注意：不在这里断开连接，因为跳转后仍需要连接
   }
 
   private updateStatusText() {
@@ -135,47 +131,45 @@ struct RoomPage {
   build() {
     Column() {
       Text('局域网联机')
-        .fontSize(28)
+        .fontSize(BreakpointUtils.getTitleFontSize() - 8)
         .fontWeight(FontWeight.Bold)
         .fontColor('#FFFFFF')
         .margin({ top: 40, bottom: 20 })
 
       if (this.mode === 'create') {
-        // ===== 创建房间模式 =====
         Text('创建房间')
-          .fontSize(22)
+          .fontSize(BreakpointUtils.getSubTitleFontSize() + 2)
           .fontColor('#00CCFF')
           .margin({ bottom: 20 })
 
         if (this.roomCode) {
           Text('房间号')
-            .fontSize(16)
+            .fontSize(BreakpointUtils.getSubTitleFontSize() - 4)
             .fontColor('#AAAAAA')
             .margin({ bottom: 8 })
 
           Text(this.roomCode)
-            .fontSize(48)
+            .fontSize(BreakpointUtils.getTitleFontSize() + 12)
             .fontWeight(FontWeight.Bold)
             .fontColor('#FFCC00')
             .margin({ bottom: 16 })
 
           Text('本机IP: ' + this.localIp)
-            .fontSize(14)
+            .fontSize(BreakpointUtils.getSubTitleFontSize() - 6)
             .fontColor('#AAAAAA')
             .margin({ bottom: 8 })
 
           Text('请将房间号和IP告诉对方')
-            .fontSize(14)
+            .fontSize(BreakpointUtils.getSubTitleFontSize() - 6)
             .fontColor('#888888')
             .margin({ bottom: 20 })
         }
 
         Text(this.statusText)
-          .fontSize(18)
+          .fontSize(BreakpointUtils.getSubTitleFontSize())
           .fontColor(this.connState === ConnState.HOST_CONNECTED ? '#00CC00' : '#FFCC00')
           .margin({ bottom: 20 })
 
-        // 等待动画
         if (this.connState === ConnState.HOST_WAITING) {
           LoadingProgress()
             .width(40)
@@ -184,21 +178,20 @@ struct RoomPage {
             .margin({ bottom: 20 })
         }
       } else {
-        // ===== 加入房间模式 =====
         Text('加入房间')
-          .fontSize(22)
+          .fontSize(BreakpointUtils.getSubTitleFontSize() + 2)
           .fontColor('#FF8800')
           .margin({ bottom: 20 })
 
         Text('房间号')
-          .fontSize(16)
+          .fontSize(BreakpointUtils.getSubTitleFontSize() - 4)
           .fontColor('#AAAAAA')
           .margin({ bottom: 8 })
 
         TextInput({ placeholder: '请输入4位房间号' })
-          .width(200)
-          .height(50)
-          .fontSize(24)
+          .width(BreakpointUtils.getButtonWidth() + 40)
+          .height(BreakpointUtils.getButtonHeight() - 10)
+          .fontSize(BreakpointUtils.getSubTitleFontSize() + 4)
           .fontColor('#FFFFFF')
           .backgroundColor('#333333')
           .textAlign(TextAlign.Center)
@@ -210,14 +203,14 @@ struct RoomPage {
           .margin({ bottom: 16 })
 
         Text('房主IP地址')
-          .fontSize(16)
+          .fontSize(BreakpointUtils.getSubTitleFontSize() - 4)
           .fontColor('#AAAAAA')
           .margin({ bottom: 8 })
 
         TextInput({ placeholder: '如 192.168.1.100' })
-          .width(240)
-          .height(50)
-          .fontSize(18)
+          .width(BreakpointUtils.getButtonWidth() + 80)
+          .height(BreakpointUtils.getButtonHeight() - 10)
+          .fontSize(BreakpointUtils.getSubTitleFontSize() - 2)
           .fontColor('#FFFFFF')
           .backgroundColor('#333333')
           .textAlign(TextAlign.Center)
@@ -227,9 +220,9 @@ struct RoomPage {
           .margin({ bottom: 20 })
 
         Button('加入')
-          .width(160)
-          .height(50)
-          .fontSize(22)
+          .width(BreakpointUtils.getButtonWidth())
+          .height(BreakpointUtils.getButtonHeight() - 10)
+          .fontSize(BreakpointUtils.getSubTitleFontSize() + 2)
           .fontWeight(FontWeight.Bold)
           .backgroundColor('#FF6600')
           .fontColor('#FFFFFF')
@@ -249,24 +242,22 @@ struct RoomPage {
         }
 
         Text(this.statusText)
-          .fontSize(18)
+          .fontSize(BreakpointUtils.getSubTitleFontSize())
           .fontColor(this.connState === ConnState.CONNECTED ? '#00CC00' : '#FFCC00')
           .margin({ bottom: 16 })
       }
 
-      // 错误信息
       if (this.errorMsg) {
         Text(this.errorMsg)
-          .fontSize(14)
+          .fontSize(BreakpointUtils.getSubTitleFontSize() - 6)
           .fontColor('#FF4444')
           .margin({ bottom: 16 })
       }
 
-      // 返回按钮
       Button('返回')
-        .width(120)
-        .height(44)
-        .fontSize(18)
+        .width(BreakpointUtils.getButtonWidth() - 40)
+        .height(BreakpointUtils.getButtonHeight() - 16)
+        .fontSize(BreakpointUtils.getSubTitleFontSize() - 2)
         .backgroundColor('#555555')
         .fontColor('#FFFFFF')
         .borderRadius(8)
@@ -276,6 +267,7 @@ struct RoomPage {
           router.pushUrl({ url: 'pages/Index' })
         })
     }
+    .padding({ bottom: 40 })
     .width('100%')
     .height('100%')
     .backgroundColor('#1A1A2E')

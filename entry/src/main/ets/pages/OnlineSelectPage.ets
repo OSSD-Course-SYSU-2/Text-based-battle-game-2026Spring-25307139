@@ -1,12 +1,11 @@
 import { router } from '@kit.ArkUI';
 import { NetManager, MsgType, ConnState, NetMessage } from '../network/NetManager';
+import { BreakpointUtils } from '../common/BreakpointUtils';
 
-// 角色选择数据
 interface CharSelectData {
   char: string
 }
 
-// 跳转对战页面参数
 interface BattleParams {
   player1Char: string
   player2Char: string
@@ -31,8 +30,12 @@ struct OnlineSelectPage {
   private rowIndices: number[] = [0, 1]
   private colIndices: number[] = [0, 1, 2]
   private netManager: NetManager = NetManager.getInstance()
+  private lastClickTime: number = 0
+  private lastClickIndex: number = -1
 
   aboutToAppear() {
+    BreakpointUtils.registerBreakpointCallback(this.getUIContext().getHostContext() as Context)
+
     const params = router.getParams() as Record<string, string>
     if (params) {
       this.isHost = (params['isHost'] as string) === 'true'
@@ -132,13 +135,13 @@ struct OnlineSelectPage {
   build() {
     Column() {
       Text('联机对战 - 选择角色')
-        .fontSize(24)
+        .fontSize(BreakpointUtils.getSubTitleFontSize() + 4)
         .fontWeight(FontWeight.Bold)
         .fontColor('#FFFFFF')
         .margin({ top: 30, bottom: 8 })
 
       Text(this.myPlayerIndex === 1 ? '你是玩家1（左侧）' : '你是玩家2（右侧）')
-        .fontSize(16)
+        .fontSize(BreakpointUtils.getSubTitleFontSize() - 4)
         .fontColor(this.myPlayerIndex === 1 ? '#00CCFF' : '#FF8800')
         .margin({ bottom: 20 })
 
@@ -148,12 +151,12 @@ struct OnlineSelectPage {
             ForEach(this.colIndices, (col: number) => {
               Column() {
                 Text(this.chars[row * 3 + col])
-                  .fontSize(32)
+                  .fontSize(BreakpointUtils.getCharFontSize())
                   .fontWeight(FontWeight.Bold)
                   .fontColor(this.selectedIndex === (row * 3 + col) ? '#000000' : '#FFFFFF')
               }
-              .width(80)
-              .height(80)
+              .width(BreakpointUtils.getCharCellSize())
+              .height(BreakpointUtils.getCharCellSize())
               .justifyContent(FlexAlign.Center)
               .alignItems(HorizontalAlign.Center)
               .backgroundColor(this.selectedIndex === (row * 3 + col) ? '#FFFFFF' : '#333333')
@@ -162,8 +165,23 @@ struct OnlineSelectPage {
               .enabled(!this.myConfirmed)
               .onClick(() => {
                 if (!this.myConfirmed) {
-                  this.selectedIndex = row * 3 + col
-                  this.selectChar()
+                  let index = row * 3 + col
+                  if (BreakpointUtils.isWideScreen()) {
+                    let now = Date.now()
+                    if (this.lastClickIndex === index && now - this.lastClickTime < 300) {
+                      this.confirmChar()
+                      this.lastClickTime = 0
+                      this.lastClickIndex = -1
+                    } else {
+                      this.selectedIndex = index
+                      this.selectChar()
+                      this.lastClickTime = now
+                      this.lastClickIndex = index
+                    }
+                  } else {
+                    this.selectedIndex = index
+                    this.selectChar()
+                  }
                 }
               })
             }, (col: number) => col.toString())
@@ -173,123 +191,125 @@ struct OnlineSelectPage {
       }
       .margin({ top: 10, bottom: 20 })
 
-      Column() {
-        Row() {
-          Button('▲')
-            .width(60)
-            .height(60)
-            .fontSize(24)
-            .backgroundColor('#555555')
-            .fontColor('#FFFFFF')
-            .enabled(!this.myConfirmed)
-            .onClick(() => {
-              if (!this.myConfirmed && this.selectedIndex >= 3) {
-                this.selectedIndex -= 3
-                this.selectChar()
-              }
-            })
+      if (!BreakpointUtils.isWideScreen()) {
+        Column() {
+          Row() {
+            Button('▲')
+              .width(BreakpointUtils.getControlBtnSize())
+              .height(BreakpointUtils.getControlBtnSize())
+              .fontSize(BreakpointUtils.getControlBtnFontSize())
+              .backgroundColor('#555555')
+              .fontColor('#FFFFFF')
+              .enabled(!this.myConfirmed)
+              .onClick(() => {
+                if (!this.myConfirmed && this.selectedIndex >= 3) {
+                  this.selectedIndex -= 3
+                  this.selectChar()
+                }
+              })
+          }
+          .justifyContent(FlexAlign.Center)
+          .width('100%')
+          .margin({ bottom: 8 })
+
+          Row() {
+            Button('◀')
+              .width(BreakpointUtils.getControlBtnSize())
+              .height(BreakpointUtils.getControlBtnSize())
+              .fontSize(BreakpointUtils.getControlBtnFontSize())
+              .backgroundColor('#555555')
+              .fontColor('#FFFFFF')
+              .enabled(!this.myConfirmed)
+              .onClick(() => {
+                if (!this.myConfirmed && this.selectedIndex % 3 !== 0) {
+                  this.selectedIndex -= 1
+                  this.selectChar()
+                }
+              })
+
+            Blank().width(20)
+
+            Button('确认')
+              .width(BreakpointUtils.getButtonWidth() - 60)
+              .height(BreakpointUtils.getControlBtnSize())
+              .fontSize(BreakpointUtils.getControlBtnFontSize())
+              .fontWeight(FontWeight.Bold)
+              .backgroundColor(this.myConfirmed ? '#336633' : '#FF6600')
+              .fontColor('#FFFFFF')
+              .enabled(!this.myConfirmed)
+              .onClick(() => {
+                this.confirmChar()
+              })
+
+            Blank().width(20)
+
+            Button('▶')
+              .width(BreakpointUtils.getControlBtnSize())
+              .height(BreakpointUtils.getControlBtnSize())
+              .fontSize(BreakpointUtils.getControlBtnFontSize())
+              .backgroundColor('#555555')
+              .fontColor('#FFFFFF')
+              .enabled(!this.myConfirmed)
+              .onClick(() => {
+                if (!this.myConfirmed && this.selectedIndex % 3 !== 2) {
+                  this.selectedIndex += 1
+                  this.selectChar()
+                }
+              })
+          }
+          .justifyContent(FlexAlign.Center)
+          .width('100%')
+          .margin({ bottom: 8 })
+
+          Row() {
+            Button('▼')
+              .width(BreakpointUtils.getControlBtnSize())
+              .height(BreakpointUtils.getControlBtnSize())
+              .fontSize(BreakpointUtils.getControlBtnFontSize())
+              .backgroundColor('#555555')
+              .fontColor('#FFFFFF')
+              .enabled(!this.myConfirmed)
+              .onClick(() => {
+                if (!this.myConfirmed && this.selectedIndex < 3) {
+                  this.selectedIndex += 3
+                  this.selectChar()
+                }
+              })
+          }
+          .justifyContent(FlexAlign.Center)
+          .width('100%')
         }
-        .justifyContent(FlexAlign.Center)
-        .width('100%')
-        .margin({ bottom: 8 })
-
-        Row() {
-          Button('◀')
-            .width(60)
-            .height(60)
-            .fontSize(24)
-            .backgroundColor('#555555')
-            .fontColor('#FFFFFF')
-            .enabled(!this.myConfirmed)
-            .onClick(() => {
-              if (!this.myConfirmed && this.selectedIndex % 3 !== 0) {
-                this.selectedIndex -= 1
-                this.selectChar()
-              }
-            })
-
-          Blank().width(20)
-
-          Button('确认')
-            .width(100)
-            .height(60)
-            .fontSize(22)
-            .fontWeight(FontWeight.Bold)
-            .backgroundColor(this.myConfirmed ? '#336633' : '#FF6600')
-            .fontColor('#FFFFFF')
-            .enabled(!this.myConfirmed)
-            .onClick(() => {
-              this.confirmChar()
-            })
-
-          Blank().width(20)
-
-          Button('▶')
-            .width(60)
-            .height(60)
-            .fontSize(24)
-            .backgroundColor('#555555')
-            .fontColor('#FFFFFF')
-            .enabled(!this.myConfirmed)
-            .onClick(() => {
-              if (!this.myConfirmed && this.selectedIndex % 3 !== 2) {
-                this.selectedIndex += 1
-                this.selectChar()
-              }
-            })
-        }
-        .justifyContent(FlexAlign.Center)
-        .width('100%')
-        .margin({ bottom: 8 })
-
-        Row() {
-          Button('▼')
-            .width(60)
-            .height(60)
-            .fontSize(24)
-            .backgroundColor('#555555')
-            .fontColor('#FFFFFF')
-            .enabled(!this.myConfirmed)
-            .onClick(() => {
-              if (!this.myConfirmed && this.selectedIndex < 3) {
-                this.selectedIndex += 3
-                this.selectChar()
-              }
-            })
-        }
-        .justifyContent(FlexAlign.Center)
-        .width('100%')
+        .margin({ top: 10 })
       }
-      .margin({ top: 10 })
 
       Text('你的角色: ' + (this.myChar.length > 0 ? this.myChar : '未选择'))
-        .fontSize(18)
+        .fontSize(BreakpointUtils.getSubTitleFontSize() - 2)
         .fontColor('#00CCFF')
         .margin({ top: 16 })
 
       if (this.opponentChar.length > 0) {
         Text('对方角色: ' + this.opponentChar)
-          .fontSize(18)
+          .fontSize(BreakpointUtils.getSubTitleFontSize() - 2)
           .fontColor('#FF8800')
           .margin({ top: 8 })
       }
 
       Text(this.statusText)
-        .fontSize(16)
+        .fontSize(BreakpointUtils.getSubTitleFontSize() - 4)
         .fontColor('#FFCC00')
         .margin({ top: 16 })
 
       if (this.errorMsg.length > 0) {
         Text(this.errorMsg)
-          .fontSize(14)
+          .fontSize(BreakpointUtils.getSubTitleFontSize() - 6)
           .fontColor('#FF4444')
           .margin({ top: 8 })
       }
 
       Button('返回')
-        .width(120)
-        .height(44)
-        .fontSize(18)
+        .width(BreakpointUtils.getButtonWidth() - 40)
+        .height(BreakpointUtils.getButtonHeight() - 16)
+        .fontSize(BreakpointUtils.getSubTitleFontSize() - 2)
         .backgroundColor('#555555')
         .fontColor('#FFFFFF')
         .borderRadius(8)
@@ -299,6 +319,7 @@ struct OnlineSelectPage {
           router.pushUrl({ url: 'pages/Index' })
         })
     }
+    .padding({ bottom: 40 })
     .width('100%')
     .height('100%')
     .backgroundColor('#1A1A2E')
