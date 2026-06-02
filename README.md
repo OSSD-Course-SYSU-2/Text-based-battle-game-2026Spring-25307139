@@ -54,3 +54,12 @@ AI 行为：
 5. 双方屏幕底部都有完整的方向键+攻击键+技能键
 6. 所有操作实时双向同步，双方界面状态一致
 
+### 图片演示
+* 角色选择
+<img src="Screenshot_2026-05-12T165457.png" style = "height:360px;width:150px">
+
+* 对战界面
+<img src="Screenshot_2026-05-12T165517.png" style = "height:360px;width:150px">
+
+* 联机页面
+<img src="屏幕截图 2026-05-12 165617.png" style = "height:360px;width:150px">
