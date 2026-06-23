@@ -70,6 +70,8 @@ AI 行为：
 主要通过屏幕上的按键进行操作包括选角色，决斗，移动等  
 * 平板操作方式  
 主要通过直接点击选择角色，操作角色按钮由手机端的正下方转到左右两端，更加适配大屏操作
+<img width="1198" height="742" alt="image" src="https://github.com/user-attachments/assets/38adb911-b224-4d4c-bcad-7ba553cfbd7b" />
+
 * 手表操作方式
 主要通过手表两端按键和屏幕点击实现攻击和选择。
 
